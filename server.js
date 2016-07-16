@@ -5,7 +5,7 @@ var md5 = require('md5');
 var mysql = require('mysql');
 var async = require('async');
 var moment = require('moment');
-var images = require("images");
+var gm = require("gm");
 var express = require('express');
 var ExifImage = require('exif').ExifImage;
 
@@ -26,6 +26,20 @@ var connection = mysql.createConnection({
   database : 'liuyb.photo'
 });
 connection.connect();
+
+require('./express.js')(app);
+
+app.get('/show', function (req, res, next) {
+  res.render('index.html', {
+    title: 'test文件上传'
+  });
+});
+
+app.get('/result', function (req, res, next) {
+  // SELECT * FROM `pics` WHERE 1 ORDER BY `datetimeoriginal` DESC LIMIT 0, 3
+  res.send(json);
+  res.end();
+});
 
 app.listen(port);
 console.log('Express app started on port ' + port);
@@ -107,7 +121,7 @@ function readExif(info) {
       console.log('Error: '+error.message);
       info.cb();
     } else {
-      var createdate = exifData.exif.CreateDate;
+      var createdate = exifData && exifData.exif && exifData.exif.CreateDate ? exifData.exif.CreateDate : '';
       var year = createdate.substr(0, 4);
       var month = createdate.substr(5, 2);
       var day = createdate.substr(8, 2);
@@ -117,6 +131,9 @@ function readExif(info) {
         console.log('读取文件：'+info.filename+'exif 成功');
         info.exifData = exifData;
         checkDirExist(info);
+      }
+      else {
+        info.cb();
       }
     }
   });
@@ -175,7 +192,10 @@ function genThumbs(info) {
     var thumb_path = join(thumb_dir, info.rel_path);
     var thumb_file_name = info.filename + '.'+item[0]+'x'+item[1]+'.'+info.ext;
     var _fileThumb = join(thumb_path, thumb_file_name);
-    images(info.dst).size(item[0]).saveAsync(_fileThumb, null, { quality : 100 }, function(){
+    gm(info.dst).resize(item[0], item[1], '^').quality(80).write(_fileThumb, function(err){
+      if(err) {
+        callback(err);
+      }
       console.log('生成缩略图：'+thumb_file_name+'成功');
       thumbs.push(join(info.rel_path, thumb_file_name));
       callback();
