@@ -41,6 +41,16 @@ function in_array(stringToSearch, arrayToSearch) {
   return false;
 }
 
+function generateMixed(n) {
+  var chars = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+  var res = "";
+  for(var i = 0; i < n ; i ++) {
+    var id = Math.ceil(Math.random()*35);
+    res += chars[id];
+  }
+  return res;
+}
+
 //< 读取目录
 function readdir() {
   console.log('读取目录'+income_dir);
@@ -117,14 +127,14 @@ function checkDirExist(info) {
   var path = storage_dir + '/' + info.rel_path;
   var thumb_path = join(thumb_dir, info.rel_path);
   fse.mkdirs(path, function(err){
-    if (error) {
+    if (err) {
       console.log('创建路径：'+path+' 失败');
       console.log('Error: '+err.message);
       info.cb();
     } else {
       console.log('创建路径：'+path+' 成功');
       fse.mkdirs(thumb_path, function(err){
-        if (error) {
+        if (err) {
           console.log('创建路径：'+thumb_path+' 失败');
           console.log('Error: '+err.message);
           info.cb();
@@ -140,14 +150,21 @@ function checkDirExist(info) {
 
 //< 移动文件到仓库
 function moveto(info) {
-  fse.copy(info.or_file_path, info.dst, function (err) {
-    if (error) {
-      console.log('移动文件：'+info.filename+'失败');
-      info.cb();
-    } else {
-      console.log('移动文件：'+info.filename+'成功');
-      genThumbs(info);
+  fs.exists(info.dst, function (exists) {
+    if(exists) {
+      var path = storage_dir + '/' + info.rel_path;
+      info.filename = info.filename + generateMixed(8) + '.' + info.ext;
+      info.dst = join(path, info.filename);
     }
+    fse.copy(info.or_file_path, info.dst, function (err) {
+      if (err) {
+        console.log('移动文件：'+info.filename+'失败');
+        info.cb();
+      } else {
+        console.log('移动文件：'+info.filename+'成功');
+        genThumbs(info);
+      }
+    });
   });
 }
 
