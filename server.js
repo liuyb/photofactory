@@ -13,9 +13,9 @@ var app = express();
 var port = '8888';
 
 //< configure
-var income_dir = '/develop/source/income';
-var storage_dir = '/develop/source/storage/original';
-var thumb_dir = '/develop/source/storage/thumb';
+var income_dir = '/data/upload/income';
+var storage_dir = '/data/storage/original';
+var thumb_dir = '/data/storage/thumb';
 var thumbnails = [[720, 720], [350, 350], [100, 100]];
 var blacklist = ['.DS_Store'];
 
@@ -23,7 +23,7 @@ var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
   password : 'root@asdf',
-  database : 'liuyb.photo'
+  database : 'photos'
 });
 connection.connect();
 
@@ -121,6 +121,7 @@ function readExif(info) {
       console.log('Error: '+error.message);
       info.cb();
     } else {
+      console.log(exifData);
       var createdate = exifData && exifData.exif && exifData.exif.CreateDate ? exifData.exif.CreateDate : '';
       var year = createdate.substr(0, 4);
       var month = createdate.substr(5, 2);
