@@ -78,7 +78,7 @@ function checkoutFileExist(info) {
           readExif(info);
         } else {
           console.log('这是旧文件：'+info.filename);
-          fs.unlink(info.or_file_path);
+          //fs.unlink(info.or_file_path);
           info.cb();
         }
       });
@@ -182,7 +182,7 @@ function genThumbs(info) {
       if (err) throw err;
       if(result.insertId) {
         console.log('数据保存到mysql成功，删除原文件:'+info.filename);
-        fs.unlink(info.or_file_path);
+        //fs.unlink(info.or_file_path);
       }
       else {
         console.log('数据保存失败');
