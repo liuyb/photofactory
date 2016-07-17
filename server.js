@@ -56,6 +56,6 @@ app.listen(port);
 logger.debug('Express app started on port ' + port);
 
 var monitor = require('./monitor.js');
-//monitor.start(logger, connection);
+monitor.start(logger, connection);
 
 module.exports = app;

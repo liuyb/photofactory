@@ -44,7 +44,7 @@
         <div class="main-posts">
             <div class="container">
                 <div class="row">
-                    <div class="blog-masonry masonry-true" id="pic-list">
+                    <div class="blog-masonry" id="pic-list">
                     </div>
                 </div>
             </div>
@@ -73,11 +73,15 @@
                 $('#loader').fadeOut(); // will first fade out the loading animation
                 $('#loader-wrapper').delay(350).fadeOut('slow'); // will fade out the white DIV that covers the website.
                 $('body').delay(350).css({'overflow-y':'visible'});
+                        setTimeout(function(){
                         $('.blog-masonry').masonry({
                             // options
                             itemSelector: '.post-masonry',
-                              columnWidth: 0
+                            columnWidth: 400
+
                               });
+
+                          }, 1000);
 
                 getResult(page);
 
@@ -113,8 +117,8 @@
                     if(ret && ret.length) {
                         for(var i = 0; i<ret.length; i++) {
                             var data = ret[i];
-                            $(tpl.replace('{$image}', data.thumbs[1])
-                                  .replace('{$datetime}', data.showdatetime)).appendTo('#pic-list');
+                            var item = $(tpl.replace('{$image}', data.thumbs[1]).replace('{$datetime}', data.showdatetime));
+                            $('.blog-masonry').append(item).masonry( 'appended', item);
                         }
                     }
                 });

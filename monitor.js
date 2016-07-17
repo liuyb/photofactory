@@ -14,7 +14,7 @@ var income_dir = '/data/upload/income';
 var storage_dir = '/data/storage/original';
 var thumb_dir = '/data/storage/thumb';
 var thumbnails = [[720, 720], [350, 350], [100, 100]];
-var blacklist = ['.DS_Store'];
+var blacklist = ['.DS_Store', 'Thumbs.db'];
 
 function in_array(stringToSearch, arrayToSearch) {
   for (var s = 0; s < arrayToSearch.length; s++) {
@@ -36,18 +36,24 @@ function generateMixed(n) {
 }
 
 //< 读取目录
-function readdir() {
-  logger.debug('读取目录'+income_dir);
-  fs.readdir(income_dir, function (err, files) {
+function readdir(dir) {
+  logger.debug('读取目录'+dir);
+  fs.readdir(dir, function (err, files) {
     logger.debug(files);
     async.eachSeries(files, function(filename, cb){
+      var filefull = join(dir, filename);
       if(!in_array(filename, blacklist)) {
-        var filefull = join(income_dir, filename);
         logger.debug('发现文件：'+filefull);
-        checkoutFileExist({filename: filename, or_file_path: filefull, ext: filename.substr(filename.lastIndexOf('.') + 1, filename.length -1), cb: cb});
+        if(fs.statSync(filefull).isDirectory()) { //< 文件夹
+          readdir(filefull);
+        }
+        else {
+          checkoutFileExist({filename: filename, or_file_path: filefull, ext: filename.substr(filename.lastIndexOf('.') + 1, filename.length -1), cb: cb});
+        }
       }
       else {
-        logger.debug('文件：'+filename+'不处理');
+        logger.debug('文件：'+filename+'不处理,删除');
+        fs.unlink(filefull);
         cb();
       }
     }, function(error){
@@ -55,7 +61,7 @@ function readdir() {
           logger.debug(error);
       }
       logger.debug('处理完成');
-      setTimeout(function(){readdir()}, 10000);
+      setTimeout(function(){readdir(income_dir)}, 1000);
     });
   });
 }
@@ -91,7 +97,6 @@ function readExif(info) {
       logger.debug('Error: '+error.message);
       info.cb();
     } else {
-      logger.debug(exifData);
       var createdate = exifData && exifData.exif && exifData.exif.CreateDate ? exifData.exif.CreateDate : '';
       var year = createdate.substr(0, 4);
       var month = createdate.substr(5, 2);
@@ -204,5 +209,5 @@ function genThumbs(info) {
 exports.start = function(_logger, _connection){
   logger = _logger;
   connection = _connection;
-  readdir();
+  readdir(income_dir);
 };
