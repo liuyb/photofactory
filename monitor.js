@@ -184,6 +184,7 @@ function genThumbs(info) {
       md5: info.md5,
       original: join(info.rel_path, info.filename),
       thumbs: JSON.stringify(thumbs),
+      exif: JSON.stringify(info.exifData),
       make: info.exifData.image.Make,
       model: info.exifData.image.Model,
       datetimeoriginal: info.exifData.exif.CreateDate,

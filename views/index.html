@@ -44,7 +44,7 @@
         <div class="main-posts">
             <div class="container">
                 <div class="row">
-                    <div class="blog-masonry" id="pic-list">
+                    <div class="blog-masonry" id="pic-list" style="max-width:1200px;">
                     </div>
                 </div>
             </div>
@@ -73,16 +73,15 @@
                 $('#loader').fadeOut(); // will first fade out the loading animation
                 $('#loader-wrapper').delay(350).fadeOut('slow'); // will fade out the white DIV that covers the website.
                 $('body').delay(350).css({'overflow-y':'visible'});
-                        setTimeout(function(){
-                        $('.blog-masonry').masonry({
+                /*
+                $('.blog-masonry').masonry({
                             // options
                             itemSelector: '.post-masonry',
-                            columnWidth: 400
-
+                            columnWidth: 20,
+                            percentPosition: true,
+                            fitWidth: true
                               });
-
-                          }, 1000);
-
+*/
                 getResult(page);
 
                 $(window).scroll(function() {
@@ -100,14 +99,14 @@
                         '<div class="post-thumb">',
                             '<img src="{$image}" alt="">',
                             '<div class="title-over">',
-                                '<h4><a href="javascript:;">Pellentesque habitant morbi</a></h4>',
+                                '<h4><a href="javascript:;">{$datetime}</a></h4>',
                             '</div>',
                             '<div class="post-hover text-center">',
                                 '<div class="inside">',
                                     '<i class="fa fa-plus"></i>',
-                                    '<span class="date">{$datetime}</span>',
-                                    '<h4><a href="#">Pellentesque habitant morbi</a></h4>',
-                                    '<p>Fusce ullamcorper diam vel arcu scelerisque</p>',
+                                    '<span class="date">{$info1}</span>',
+                                    '<h4><a href="#">{$info2}</a></h4>',
+                                    '<p>{$info3}</p>',
                                 '</div>',
                             '</div>',
                         '</div>',
@@ -117,8 +116,8 @@
                     if(ret && ret.length) {
                         for(var i = 0; i<ret.length; i++) {
                             var data = ret[i];
-                            var item = $(tpl.replace('{$image}', data.thumbs[1]).replace('{$datetime}', data.showdatetime));
-                            $('.blog-masonry').append(item).masonry( 'appended', item);
+                            var item = $(tpl.replace('{$image}', data.thumbs[1]).replace('{$datetime}', data.showdatetime).replace('{$info1}', data.make).replace('{$info2}', data.model).replace('{$info3}', data.software));
+                            $('.blog-masonry').append(item)//.masonry( 'appended', item);
                         }
                     }
                 });
