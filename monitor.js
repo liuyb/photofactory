@@ -15,6 +15,7 @@ var storage_dir = '/data/storage/original';
 var thumb_dir = '/data/storage/thumb';
 var thumbnails = [[720, 720], [350, 350], [100, 100]];
 var blacklist = ['.DS_Store', 'Thumbs.db'];
+var whiteext = ['jpg', 'jpeg'];
 
 function in_array(stringToSearch, arrayToSearch) {
   for (var s = 0; s < arrayToSearch.length; s++) {
@@ -34,35 +35,74 @@ function generateMixed(n) {
   }
   return res;
 }
+function _async(arr, callback1, callback2) {
+  if (Object.prototype.toString.call(arr) !== '[object Array]') {
+    return callback2(new Error('第一个参数必须为数组'));
+    }
+    if (arr.length === 0)
+      return callback2(null);
+    (function walk(i) {
+      if (i >= arr.length) {
+        return callback2(null);
+        }
+        callback1(arr[i], function () {
+         walk(++i);
+          });
+        })(0);
+}
+function read(dir, callback) {
+  var filesArr = [];
+  dir = ///$/.test(dir) ? dir : dir + '/';
+  (function dir(dirpath, fn) {
+    var files = fs.readdirSync(dirpath);
+    _async(files, function (item, next) {
+      var info = fs.statSync(join(dirpath , item));
+      if (info.isDirectory()) {
+        dir(join(dirpath, item) + '/', function () {
+          next();
+        });
+      } else {
+        filesArr.push([dirpath, item]);
+        callback && callback(item, join(dirpath, item));
+        next();
+      }
+    }, function (err) {
+      !err && fn && fn();
+    });
+  })(dir);
+  return filesArr;
+}
+
 
 //< 读取目录
-function readdir(dir) {
+function dojob(dir) {
   logger.debug('读取目录'+dir);
-  fs.readdir(dir, function (err, files) {
-    logger.debug(files);
-    async.eachSeries(files, function(filename, cb){
-      var filefull = join(dir, filename);
-      if(!in_array(filename, blacklist)) {
+  var files = read(dir, function(filename, filefull){});
+
+  async.eachSeries(files, function(file, cb){
+    var dir = file[0], filename = file[1], ext = filename.substr(filename.lastIndexOf('.') + 1, filename.length -1).toLowerCase();
+    var filefull = join(dir, filename);
+    if(!in_array(filename, blacklist)) {
+      if(in_array(ext, whiteext)) {
         logger.debug('发现文件：'+filefull);
-        if(fs.statSync(filefull).isDirectory()) { //< 文件夹
-          readdir(filefull);
-        }
-        else {
-          checkoutFileExist({filename: filename, or_file_path: filefull, ext: filename.substr(filename.lastIndexOf('.') + 1, filename.length -1), cb: cb});
-        }
+        checkoutFileExist({filename: filename, or_file_path: filefull, ext: ext, cb: cb});
       }
       else {
-        logger.debug('文件：'+filename+'不处理,删除');
-        fs.unlink(filefull);
+        logger.debug('文件：'+filename+'不处理');
         cb();
       }
-    }, function(error){
-      if(error) {
-          logger.debug(error);
-      }
-      logger.debug('处理完成');
-      setTimeout(function(){readdir(income_dir)}, 1000);
-    });
+    }
+    else {
+      logger.debug('文件：'+filename+'不处理,删除');
+      fs.unlink(filefull);
+      cb();
+    }
+  }, function(error){
+    if(error) {
+        logger.debug(error);
+    }
+    logger.debug('处理完成');
+    setTimeout(function(){dojob(dir)}, 1000);
   });
 }
 
@@ -78,7 +118,7 @@ function checkoutFileExist(info) {
           readExif(info);
         } else {
           logger.debug('这是旧文件：'+info.filename);
-          //fs.unlink(info.or_file_path);
+          fs.unlink(info.or_file_path);
           info.cb();
         }
       });
@@ -196,7 +236,7 @@ function genThumbs(info) {
       if (err) throw err;
       if(result.insertId) {
         logger.debug('数据保存到mysql成功，删除原文件:'+info.filename);
-        //fs.unlink(info.or_file_path);
+        fs.unlink(info.or_file_path);
       }
       else {
         logger.debug('数据保存失败');
@@ -206,9 +246,11 @@ function genThumbs(info) {
   });
 }
 
+
+
 //< 启动
 exports.start = function(_logger, _connection){
   logger = _logger;
   connection = _connection;
-  readdir(income_dir);
+  dojob(income_dir);
 };
